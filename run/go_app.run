@@ -20,13 +20,13 @@ install_config {
 		<default-route>
 			<any-service> <any-child/> <parent/> </any-service>
 		</default-route>
-		<default caps="250"/>
+		<default caps="100"/>
                 <start name="timer">
                         <resource name="RAM" quantum="4M"/>
                         <provides><service name="Timer"/></provides>
                 </start>
-		<start name="test-go" caps="250">
-			<resource name="RAM" quantum="2024M"/>
+		<start name="test-go" caps="300">
+			<resource name="RAM" quantum="120M"/>
 			<config verbose="yes" ld_verbose="yes" >
 				<vfs>
 					<dir name="dev"> <log/> </dir>
@@ -55,7 +55,7 @@ build_boot_image {
 	vfs.lib.so test-go
 }
 
-append qemu_args " -m 1480M -nographic -smp 1"
+append qemu_args " -m 512M -nographic -smp 4"
 
 run_genode_until forever
 run_genode_until "--- parent done ---.*\n" 20

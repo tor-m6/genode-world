@@ -3,9 +3,9 @@
 
 set build_components {
 core init timer lib/ld
+lib/vfs/pipe
 drivers/uart app/gdb_monitor
 test/go_app
-lib/vfs/pipe
 }
 
 lappend build_components "lib/gdbserver_platform-$::env(KERNEL)"
@@ -45,9 +45,9 @@ install_config {
 		</config>
 	</start>
 	<start name="gdb_monitor" caps="3500">
-		<resource name="RAM" quantum="350M" />
+		<resource name="RAM" quantum="150M" />
 		<provides> <service name="test-go" /> </provides>
-		<config >
+		<config  verbose="yes" ld_verbose="yes">
 			<target name="test-go" >
 				<config verbose="yes" ld_verbose="yes">
 				<vfs>
@@ -67,12 +67,14 @@ install_config {
 				<libc stdout="/dev/log" stderr="/dev/log" />
 				</config>
 			</target>
-			<preserve name="RAM" quantum="80M" />
+			<preserve name="RAM" quantum="180M" />
 			<vfs>
 				<dir name="dev"> <log/> <terminal/> </dir>
 				<dir name="pipe"> <pipe/> </dir>
 			</vfs>
-			<libc stdout="/dev/log" stderr="/dev/log" pipe="/pipe"/>
+                <libc stdout="/dev/log" stderr="/dev/log" pipe="/pipe">
+					<mmap local_area_default_size="1610612736" />
+				</libc>
 		</config>
 	</start>
 </config>
@@ -86,7 +88,7 @@ return "gdbserver_platform-$::env(KERNEL).lib.so"
 
 build_boot_image {
 	core init timer ld.lib.so libc.lib.so libm.lib.so posix.lib.so stdcxx.lib.so
-	vfs.lib.so test-go
-	pc_uart_drv vfs_pipe.lib.so gdb_monitor gdbserver_platform.lib.so
+	vfs.lib.so test-go vfs_pipe.lib.so
+	pc_uart_drv gdb_monitor gdbserver_platform.lib.so
 }
 
