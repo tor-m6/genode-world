@@ -279,8 +279,11 @@ int innosetcontext(ucontext_t *uc)
 			/* copy Thread& field from current stack to new stack */
 			*((void **)(new_native - thr_off)) = *((void **)(cnative - thr_off));
 
-			/* copy rest */
-			Genode::memcpy((void *)new_native, (void *)cnative, cend_stack - size_t(cnative));
+			/* copy rest without last page (could be stack guard if enough space) */
+			size_t size = cend_stack - size_t(cnative);
+			/* FIXME: linux version does not have guard page in the end while others has */
+			size = size > 0x1000 ? size - 0x1000 : size;
+			Genode::memcpy((void *)new_native, (void *)cnative, size);
 		}
 	}
 
