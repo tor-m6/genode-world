@@ -336,12 +336,12 @@ class Genode::Vm_area_registry
 		_pvma->add_range(_pvma->base(), size);
 	}
 
-	~Vm_area_registry()
-	{
-		_registry.for_each([&](Vm_area_handle &vma) {
-			                   destroy(_kheap, &vma);
-		                   });
-	}
+	// ~Vm_area_registry()
+	// {
+	// 	_registry.for_each([&](Vm_area_handle &vma) {
+	// 		                   destroy(_kheap, &vma);
+	// 	                   });
+	// }
 
 	addr_t reserve(size_t size, addr_t base, int align)
 	{
@@ -513,7 +513,12 @@ char *Genode::pd_reserve_memory(size_t bytes, void *requested_addr,
 	}
 	catch (...)
 	{
-		Genode::error(__PRETTY_FUNCTION__, " exception!");
+		/* some platform like sel4 do not allow to use 0xc000000000 for arena
+		 * in this place could be waterfall of alloc exception messages
+
+		Genode::error(__PRETTY_FUNCTION__, " alloc exception, ",
+					  Hex_range((Genode::addr_t)requested_addr, bytes));
+		 */
 	}
 	return nullptr;
 }
