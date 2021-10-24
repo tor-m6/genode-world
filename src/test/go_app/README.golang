@@ -78,7 +78,7 @@ On most systems (like seL4) you can use only debug print, and sometimes print lo
 You can use gdb to debug your application on nova using qemu stub (-s) or internal gdbserver (while gdb 
 support in genode somehow limited, I found a lot of problems with improper breaks/etc); 
 I use Parallels VM or qemu on Mac. To compile code for gdb please, take a look at
-repos/world/run/go_app_dbg.run.
+repos/world/run/go_app_dbg.run (on 21.08 gdb_monitor currently not started).
 For convenience I add my VSCode launch.json (to run debugger using VSCode as frontend):
         {
             "type": "gdb",
@@ -121,11 +121,19 @@ Addresses like -o 0x10dfe000 you could take from log of program after first star
 
 	Current limitations
 	===================
-  -	can run in VM with 1 CPU only:
-	2+ cpu give some pagefault in runtime.kickoff, seems that g does not have valid entry field (0)
-   -	it works only on x86_64, tested on nova and linux (not yet on sel4) kernels
+  -	tested nominally up to 4 CPU
+  -	it works only on x86_64, tested on nova linux sel4 kernels
 	genode do not support makecontex/setcontext/gencontext family; but it is crucial to support because of goroutine model;
-	I have to port it from FreeBSD libc. It is machine and platform-dependent; 
+	I have to port it from FreeBSD libc. It is machine and platform-dependent;
+  -	Genode thread model closer to traditional processes than to threads; in particular, capabilities and their permisions
+	allocated in one thread could became unaccessible in another while posix thread model assume that if you open something
+	in one thread then it could be used in another of the same process. Genode thread binded to the stack; goroutines assume
+	fast changes of CPU and related thread, and therefore during migration of goroutine between OS (Genode) threads we
+	need to update stack content to point to correct OS thread, as well as call all system services via wrappers (which already
+	supported in golang runtime and partially in pthread Genode port in libc).
+	Current implementation do rewrite stack during context switch, and do nothing with any resources (while use libc port which
+	alredy does something similar);
+	!!! if you allocate/directly request resources inside goroutine, it could fail during goroutine thread migration !!!
   -	during port I make a set of dirty fixes for absent on the platform (genode/nova), in particular "empty" C implementaion of
 	sendfile(), getpgid(), lchown(), mount(), settimeofday(), mlock(), munlock(), mlockall(), munlockall(), sigaltstack();
 	in go part of runtime port I also "damage" some functions, in particualr route.sysctl(), broke poll.ReadDirent(), do not
