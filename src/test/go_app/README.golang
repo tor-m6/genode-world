@@ -22,7 +22,7 @@ you need to fill mc_len field before call to makecontext()); for stack it use al
 	========================
 0. setup genode on appropriate platform using https://github.com/tor-m6/genode.git and https://github.com/tor-m6/genode-world.git, 
 configure toolchain and prepare  code to compile, setup environment, e.g. (replace by your own dirs):
-	export PATH=/usr/local/genode/tool/current/bin:/media/psf/Home/gen/20.05/build/tool_chain-19.05/install/bin:$PATH
+	export PATH=/usr/local/genode/tool/current/bin:<your genode dir>build/x86_64/lib/libgo:$PATH
 	export AS=genode-x86-as
 	export LD=genode-x86-ld
 	export GDB=genode-x86-gdb
@@ -33,15 +33,11 @@ configure toolchain and prepare  code to compile, setup environment, e.g. (repla
 	export READELF=genode-x86-readelf
 	export AR=genode-x86-ar
 	export NM=genode-x86-gcc-nm
-   add to begining of build/x86_64/etc/build.conf something like (correct dirs):
+   correct if need begining of build/x86_64/etc/build.conf and uncomment libports ports world repos inside:
 	GENODE_DIR  := <your genode dir>
 	BASE_DIR    := $(GENODE_DIR)/repos/base
 	CONTRIB_DIR := $(GENODE_DIR)/contrib
 
-	# toolchain prefix
-	export CROSS_DEV_PREFIX:=/usr/local/genode/tool/current/bin/genode-x86-
-	# compiler for GO
-	export GOC := /usr/local/genode/tool/current/bin/genode-x86-gccgo
 	...
    and finally cd to genode dir
 1. prepare ports from genode, e.g. by
@@ -49,12 +45,12 @@ configure toolchain and prepare  code to compile, setup environment, e.g. (repla
 2. prepare ports to build golang libgo from gcc distirbution
 	./tool/ports/prepare_port libatomic libbacktrace libffi libgo
 3. build native libraries (set your own flags if need, eg -O) for genode (libgo should be the last) by
-	make -C build/x86_64/ KERNEL=nova CFLAGS="-g -O0" lib/libatomic
-	make -C build/x86_64/ KERNEL=nova CFLAGS="-g -O0" lib/libbacktrace
-	make -C build/x86_64/ KERNEL=nova CFLAGS="-g -O0" lib/libffi
-	make -C build/x86_64/ KERNEL=nova CFLAGS="-g -O0" lib/libgo
+	make -C build/x86_64/ KERNEL=nova CFLAGS="-g -O2" lib/libatomic
+	make -C build/x86_64/ KERNEL=nova CFLAGS="-g -O2" lib/libbacktrace
+	make -C build/x86_64/ KERNEL=nova CFLAGS="-g -O2" lib/libffi
+	make -C build/x86_64/ KERNEL=nova CFLAGS="-g -O2" lib/libgo
 4. build and run test go application by
-	make -C build/x86_64/ KERNEL=nova CFLAGS="-g -O0" run/go_app
+	make -C build/x86_64/ KERNEL=nova CFLAGS="-g -O2" run/go_app
 
 target.mk for test app:
 
@@ -121,9 +117,9 @@ Addresses like -o 0x10dfe000 you could take from log of program after first star
 
 	Current limitations
 	===================
-  -	tested nominally up to 4 CPU
+  -	tested nominally up to 4 CPU (you could setup it in go_app.run file in qemu options like -smp 4)
   -	it works only on x86_64, tested on nova linux sel4 kernels
-	genode do not support makecontex/setcontext/gencontext family; but it is crucial to support because of goroutine model;
+	genode do not have makecontex/setcontext/gencontext family while it is crucial to support because of goroutine model;
 	I have to port it from FreeBSD libc. It is machine and platform-dependent;
   -	Genode thread model closer to traditional processes than to threads; in particular, capabilities and their permisions
 	allocated in one thread could became unaccessible in another while posix thread model assume that if you open something
@@ -133,8 +129,8 @@ Addresses like -o 0x10dfe000 you could take from log of program after first star
 	supported in golang runtime and partially in pthread Genode port in libc).
 	Current implementation do rewrite stack during context switch, and do nothing with any resources (while use libc port which
 	alredy does something similar);
-	!!! if you allocate/directly request resources inside goroutine, it could fail during goroutine thread migration !!!
-  -	during port I make a set of dirty fixes for absent on the platform (genode/nova), in particular "empty" C implementaion of
+	!!! if you allocate/directly request resources/caps/etc inside goroutine, it could fail during goroutine thread migration !!!
+  -	during port I make a set of dirty fixes for the platform (genode/nova/sel4/linux), in particular "empty" C implementaion of
 	sendfile(), getpgid(), lchown(), mount(), settimeofday(), mlock(), munlock(), mlockall(), munlockall(), sigaltstack();
 	in go part of runtime port I also "damage" some functions, in particualr route.sysctl(), broke poll.ReadDirent(), do not
 	use ptrace, and some others.
