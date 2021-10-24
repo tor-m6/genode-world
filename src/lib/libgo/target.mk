@@ -3,7 +3,7 @@ LD_OPT_NOSTDLIB := -nostdlib -Wl,-nostdlib
 MAKE_TARGET := all
 LIBS += libatomic libbacktrace libffi libgo_support
 
-CC_OLEVEL = -O0
+#CC_OLEVEL = -O0
 
 # do not use configure default args
 NO_DEFAULT_CONFIGURE_ARGS=
