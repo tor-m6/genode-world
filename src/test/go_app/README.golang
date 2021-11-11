@@ -114,6 +114,31 @@ Addresses like -o 0x10dfe000 you could take from log of program after first star
 [init -> gdb_monitor -> test-go]   0x10d28000 .. 0x10d61fff: libm.lib.so
 [init -> gdb_monitor -> test-go]   0x1310000 .. 0x14c7fff: stdcxx.lib.so
 
+	IMPORTANT:
+run file should contain all libs and binaries from above and "/proc/exe", otherwise stackunwind performed 
+by golang will fail. Like
+	<start name="test-go" caps="400">
+		<resource name="RAM" quantum="220M"/>
+		<config verbose="yes" ld_verbose="yes" >
+		<vfs>
+			<dir name="dev"> <log/> </dir>
+			<rom name="ld.lib.so" label="ld.lib.so"/>
+			<rom name="libc.lib.so" label="libc.lib.so"/>
+			<rom name="vfs.lib.so" label="vfs.lib.so"/>
+			<rom name="libm.lib.so" label="libm.lib.so"/>
+			<rom name="stdcxx.lib.so" label="stdcxx.lib.so"/>
+			<rom name="binary" label="test-go"/>
+			<dir name="proc">
+				<dir name="self">
+				<rom name="exe" label="test-go"/>
+				</dir>
+			</dir>
+		</vfs>
+                <libc stdout="/dev/log" stderr="/dev/log">
+			<mmap local_area_default_size="1610612736" />
+		</libc>
+Also it should contain size of arena (above is 1.5Gb), this is virtual address space used, not always necessary
+correspond to physical RAM size (probably not significantly less).
 
 	Current limitations
 	===================
@@ -137,6 +162,7 @@ Addresses like -o 0x10dfe000 you could take from log of program after first star
 	See patches for libgo in repos/world/src/lib/libgo/. Anything in Golang which use them will fail.
 	Potentially new genode releases will contain something which can replace or fix these and other patched functions
   -	mmap support for ANON mapping implemented do not support re-map of already allocated memory outside of made by mmap alloc
+  -	mmap area do not freed during exit - otherwise we will free memory while some theads continue running
   -	networking: never try, need to integrate with other ports, and see above about broken syscalls/routing/etc
 
 Questions? tor@innopolis.ru - related to port (and Alexey Semenov aleks.semenov@innopolis.ru - related to build process).
