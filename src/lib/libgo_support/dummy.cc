@@ -279,6 +279,11 @@ int innosetcontext(ucontext_t *uc)
 			/* copy Thread& field from current stack to new stack */
 			*((void **)(new_native - thr_off)) = *((void **)(cnative - thr_off));
 
+			/* copy pthread* filed from current stack to new stack */
+			Thread::Stack_info info = Thread::mystack();
+			*((void **)(nstack_abase + info.libc_tls_pointer_offset))
+				= *((void **)(cstack_abase + info.libc_tls_pointer_offset));
+
 			/* copy rest without last page (could be stack guard if enough space) */
 			size_t size = cend_stack - size_t(cnative);
 			/* FIXME: linux version does not have guard page in the end while others has */
