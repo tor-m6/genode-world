@@ -1105,18 +1105,6 @@ diff -NaurwB gcc.libgobase/libgo/go/runtime/auxv_none.go gcc.libgomod/libgo/go/r
  
  package runtime
  
-diff -NaurwB gcc.libgobase/libgo/go/runtime/netpoll_fake.go gcc.libgomod/libgo/go/runtime/netpoll_fake.go
---- gcc.libgobase/libgo/go/runtime/netpoll_fake.go	2021-06-08 12:14:11.557350685 +0300
-+++ gcc.libgomod/libgo/go/runtime/netpoll_fake.go	2021-06-08 14:15:08.788269695 +0300
-@@ -5,7 +5,7 @@
- // Fake network poller for wasm/js.
- // Should never be used, because wasm/js network connections do not honor "SetNonblock".
- 
--// +build js,wasm
-+// +build js,wasm inno
- 
- package runtime
- 
 diff -NaurwB gcc.libgobase/libgo/go/syscall/forkpipe.go gcc.libgomod/libgo/go/syscall/forkpipe.go
 --- gcc.libgobase/libgo/go/syscall/forkpipe.go	2021-06-08 12:14:11.465350221 +0300
 +++ gcc.libgomod/libgo/go/syscall/forkpipe.go	2021-06-08 16:38:39.419274126 +0300
@@ -1152,4 +1140,16 @@ diff -NaurwB gcc.libgobase/libgo/go/syscall/syscall_funcs_stubs.go gcc.libgomod/
 +// +build aix rtems inno
  
  // These are stubs.
+ 
+diff -NaurwB contrib/libgo-2243124ca708eb8de90e2cea56f61e9da5248f22.org/src/lib/gcc/libgo/go/runtime/nbpipe_pipe2.go contrib/libgo-2243124ca708eb8de90e2cea56f61e9da5248f22/src/lib/gcc/libgo/go/runtime/nbpipe_pipe2.go
+--- contrib/libgo-2243124ca708eb8de90e2cea56f61e9da5248f22.org/src/lib/gcc/libgo/go/runtime/nbpipe_pipe2.go	2021-04-08 14:56:30.069764827 +0300
++++ gcc/libgo/go/runtime/nbpipe_pipe2.go	2021-11-22 23:24:45.520992999 +0300
+@@ -2,7 +2,7 @@
+ // Use of this source code is governed by a BSD-style
+ // license that can be found in the LICENSE file.
+ 
+-// +build freebsd hurd linux netbsd openbsd solaris
++// +build freebsd hurd linux netbsd openbsd solaris inno
+ 
+ package runtime
  
