@@ -115,7 +115,7 @@ Addresses like -o 0x10dfe000 you could take from log of program after first star
 [init -> gdb_monitor -> test-go]   0x1310000 .. 0x14c7fff: stdcxx.lib.so
 
 	IMPORTANT:
-run file should contain all libs and binaries from above and "/proc/exe", otherwise stackunwind performed 
+run file should contain all libs and binaries from above and "/proc/exe", otherwise stack unwind performed 
 by golang will fail. Like
 	<start name="test-go" caps="400">
 		<resource name="RAM" quantum="220M"/>
@@ -153,17 +153,16 @@ correspond to physical RAM size (probably not significantly less).
 	need to update stack content to point to correct OS thread, as well as call all system services via wrappers (which already
 	supported in golang runtime and partially in pthread Genode port in libc).
 	Current implementation do rewrite stack during context switch, and do nothing with any resources (while use libc port which
-	alredy does something similar);
-	!!! if you allocate/directly request resources/caps/etc inside goroutine, it could fail during goroutine thread migration !!!
+	alredy does something similar and do not fail);
+	!!! if you allocate/directly request resources/caps/etc from genode inside goroutine, it could fail during goroutine thread 
+	!!! migration; better use "native" libc calls from genode port which take care of it
   -	during port I make a set of dirty fixes for the platform (genode/nova/sel4/linux), in particular "empty" C implementaion of
 	sendfile(), getpgid(), lchown(), mount(), settimeofday(), mlock(), munlock(), mlockall(), munlockall(), sigaltstack();
-	in go part of runtime port I also "damage" some functions, in particualr route.sysctl(), broke poll.ReadDirent(), do not
-	use ptrace, and some others.
-	See patches for libgo in repos/world/src/lib/libgo/. Anything in Golang which use them will fail.
-	Potentially new genode releases will contain something which can replace or fix these and other patched functions
+	See patches for libgo in repos/world/src/lib/libgo/ and dummy.cc in libgo_support. Anything in Golang which use them will fail.
+	NB: Potentially new genode releases will contain something which can replace or fix these and other patched functions
   -	mmap support for ANON mapping implemented do not support re-map of already allocated memory outside of made by mmap alloc
   -	mmap area do not freed during exit - otherwise we will free memory while some theads continue running
-  -	networking: never try, need to integrate with other ports, and see above about broken syscalls/routing/etc
+  -	networking: works for at least net/http package, see go_http example of http server
 
 Questions? tor@innopolis.ru - related to port (and Alexey Semenov aleks.semenov@innopolis.ru - related to build process).
 Origin in https://github.com/tor-m6/genode.git
