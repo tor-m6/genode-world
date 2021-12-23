@@ -17,6 +17,14 @@ long getstackaddress(ucontext_t *uc)
 	return uc->uc_mcontext.mc_rsp;
 }
 
+/*
+ * init platform-dependent ucontext_t
+ */
+void initucontext(ucontext_t *uc)
+{
+	uc->uc_mcontext.mc_len = sizeof(uc->uc_mcontext);
+}
+
 void othercontext(void **pmyself);
 
 /*
