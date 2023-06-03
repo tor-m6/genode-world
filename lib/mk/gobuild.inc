@@ -14,6 +14,10 @@
 # single base packet downloaded with no-mod mode, others in mod
 # mods stored in libgo; use goroot
 # GOBUILD_VERBOSE can be set to -x in target.mk to show build process
+# GOPKG_MANUAL, if set to yes, assume "git clone" instead "go get" / "go mod tidy -e"
+# GO_GIT_URL should point to git file (e.g. https://github.com/tor-m6/runc.git)
+# GO_GIT_BRANCH is a branch for above url
+# GO_GIT_CHECKOUTDIR is an adress of place to checkout(could be differ from name, should start from src/)
 
 ifeq ($(VERBOSE),)
 GOBUILD_VERBOSE ?= -v 
@@ -32,7 +36,7 @@ ifeq ($(filter-out %.go,x$(SRC_GO_PKG)),x$(SRC_GO_PKG))
 endif
 
 ifneq (x$(GO_BUILD_LIB),xyes)
-	# assume set of .go files to be compiled
+# assume set of .go files to be compiled
 	TARGET ?= $(lastword $(subst /, ,$(PRG_DIR)))
 	PKG    ?= $(TARGET)
 
@@ -50,12 +54,22 @@ else
 	SRC_GO_PKG_MAIN ?= $(SRC_GO_PKG)
 	SRC_GO_BUILD_DIR = src/$(SRC_GO_PKG_MAIN)
 
+	GO_GIT_CHECKOUTDIR ?= $(SRC_GO_BUILD_DIR)
+
 $(PKG):
 ifeq ($(VERBOSE),)
 		echo Building $@
 endif
+ifneq ($(GOPKG_MANUAL),yes)
 		$(VERBOSE)mkdir -p src
-		$(VERBOSE)source ./env.sh && GO111MODULE=off GOPATH=$(CURDIR) genode-go get -x -v -d $(SRC_GO_PKG_MAIN)
+		$(VERBOSE)source ./env.sh && GO111MODULE=off GOPATH=$(CURDIR) \
+			genode-go get -x -v -d $(SRC_GO_PKG_MAIN)
+else
+		$(VERBOSE)if [ ! -d src ]; then \
+			git clone --branch $(GO_GIT_BRANCH) --single-branch \
+				$(GO_GIT_URL) $(GO_GIT_CHECKOUTDIR) ; \
+		fi
+endif
 endif
 
 STRIP_TARGET_CMD ?= $(STRIP) -o $(CURDIR)/$@ $(CURDIR)/$<
@@ -130,10 +144,12 @@ $(TARGET): env.sh $(SRC_GO_PK) $(SHARED_LIBS) $(GOROOT)/bin
 			ln -sf $${files} .; \
 		fi \
 	done
+ifneq ($(GOPKG_MANUAL),yes)
 	$(VERBOSE)if [ ! -f go.mod ]; then \
 		source ./env.sh && genode-go mod init $(PKG); \
 	fi
 	$(VERBOSE)source ./env.sh && genode-go mod tidy -e
+endif
 	$(VERBOSE)source ./env.sh && cd $(SRC_GO_BUILD_DIR) && \
 		genode-go build $(GOBUILD_FLAGS) -o $(CURDIR)/$@ $(SRC_GO_PKG_MAIN)
 
