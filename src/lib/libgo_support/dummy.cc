@@ -68,6 +68,12 @@ int mount(const char *source, const char *target, int f, void *data) {
 	return -1;
 }
 
+int unmount(const char *, int) {
+	NOT_IMPL;
+	errno = EOPNOTSUPP;
+	return -1;
+}
+
 #include <sys/time.h>
 int settimeofday(const struct timeval *tv , const struct timezone *tz) {
 	NOT_IMPL;
