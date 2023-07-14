@@ -38,6 +38,7 @@ $(CURDIR)/toolchain/gcc/libgo/:
 	@echo \*\*\* prepare local toolchain
 	$(VERBOSE)mkdir -p $@
 	$(VERBOSE)ln -sf $(TOOLS_BASE)/libexec $@../..
+	$(VERBOSE)ln -sf $(TOOLS_BASE)/lib/gcc/$(shell $(GCC) -dumpmachine) $@
 	$(VERBOSE)ln -sf $(TOOLS_BASE)/$(shell $(GCC) -dumpmachine) $@../..
 	$(VERBOSE)cd $(LIBGO_PKG_BUILD) && find . -name \*.gox -printf '%h\n' | xargs -i mkdir -p $@\{}
 	$(VERBOSE)cd $@ && find $(LIBGO_PKG_BUILD) -name \*.gox -printf '%p %P\n'  | xargs -n2 ln -s
