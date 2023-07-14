@@ -151,6 +151,6 @@ ifneq ($(GOPKG_MANUAL),yes)
 	$(VERBOSE)source ./env.sh && genode-go mod tidy -e
 endif
 	$(VERBOSE)source ./env.sh && cd $(SRC_GO_BUILD_DIR) && \
-		genode-go build $(GOBUILD_FLAGS) -o $(CURDIR)/$@ $(SRC_GO_PKG_MAIN)
+		GO111MODULE=off genode-go build $(GOBUILD_FLAGS) -o $(CURDIR)/$@ $(SRC_GO_PKG_MAIN)
 
 LIBS   = base libc libm libgo libgo_support stdcxx
