@@ -44,6 +44,10 @@ extern "C" int main(int argc, char **argv, char **envp);
 
 static void construct_component(Libc::Env &env)
 {
+	genode_argc = 0;
+	genode_argv = nullptr;
+	genode_envp = nullptr;
+
 	populate_args_and_env(env, genode_argc, genode_argv, genode_envp);
 
 	environ = genode_envp;
@@ -62,7 +66,7 @@ extern "C" void wait_for_continue();
 
 void Libc::Component::construct(Libc::Env &env)
 {
-	// wait_for_continue();
+	wait_for_continue();
 
 	Libc::anon_init_file_operations(env, env.libc_config());
 
