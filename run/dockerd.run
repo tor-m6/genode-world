@@ -1,0 +1,58 @@
+#
+# \brief  docker container support
+# \author Alexander Tormasov
+# \date   2023-07-18
+#
+
+# check network configuration detailes/settings from source file below
+# especially for linux TAP drivers
+#
+
+# general config section
+set num_cpu 1
+set mem_size "512M"
+# uncommited virtual memory size in bytes - 1610612736 == 1.5Gb
+set arena_mem_size "1610612736"
+
+# TARGET= from target.mk
+set executable "dockerd"
+
+# could be like test to refer make target "test/go_http"
+set executable_place "test"
+
+set executable_mem "164M"
+set executable_caps "1000"
+
+#set executable_ip  "10.0.3.2"
+#set executable_net "24"
+#set executable_gateway "10.0.3.1"
+#set executable_port "8080"
+
+set arguments "<arg value=\"-D\"/> \
+    <arg value=\"-l\"/> \
+    <arg value=\"debug\"/> \
+    <arg value=\"--rootless\"/> \
+    <arg value=\"--experimental\"/> \
+"
+#set arguments "<arg value=\"127.0.0.1\"/>"
+#dockerd  -D -l debug --rootless --experimental
+#dockerd  -D -l debug --rootless --experimental --containerd=/run/containerd/containerd.sock
+
+# no network
+set use_net 0
+
+#set use_lxip 1
+
+#set use_nic_router 0
+#set ld_nic "yes"
+#if {[have_board linux]} { set ld_nic "no" }
+
+#set use_nic  0
+set use_rtc  1
+
+source ${genode_dir}/repos/world/run/go_run.inc
+
+append qemu_args " -m $mem_size -nographic -smp $num_cpu"
+if { $use_net } { append_qemu_nic_args "hostfwd=tcp::5555-:$executable_port" }
+
+run_genode_until forever

@@ -39,27 +39,44 @@ set modules "ld.lib.so libc.lib.so libm.lib.so stdcxx.lib.so vfs.lib.so posix.li
 set conf_verbose "yes"
 set conf_ld_verbose "yes"
 
-# for linux - should be pre-configured via linux tap interface
-set lx_ip_addr "10.0.2.55"
-set lx_gw_addr "10.0.2.1"
-
-set use_nic_router 1
-set ld_nic "yes"
-#if {[have_board linux]} { set ld_nic "no" }
-
-set use_nic  1
-set use_rtc  1
-
-proc socket_fs_plugin {} {
-	global use_lxip
-	if { $use_lxip } { return lxip }
-	return lwip
+if {![info exists use_net]} {
+	set use_net 1
 }
+
+if {![info exists use_lx_fs]} {
+	set use_lx_fs 0
+}
+
+if {$use_net} {
+	#for linux - should be pre - configured via linux tap interface
+	set lx_ip_addr "10.0.2.55"
+	set lx_gw_addr "10.0.2.1"
+
+	set use_nic_router 1
+	set ld_nic "yes"
+	#if {[have_board linux]} {set ld_nic "no"}
+
+	set use_nic 1
+	proc socket_fs_plugin {} { global use_lxip; if {$use_lxip} { return lxip } else { return lwip } }
+} else {
+	set use_nic 0
+	set use_lxip 0
+	set use_nic_router 0
+	set ld_nic ""
+	set lx_ip_addr ""
+	set lx_gw_addr ""
+	set executable_ip  ""
+	set executable_net ""
+	set executable_gateway ""
+	set executable_port ""
+	proc socket_fs_plugin { } { }
+}
+
+set use_rtc  1
 
 append_if $need_pipe modules { vfs_pipe.lib.so }
 
-append modules { vfs_} [socket_fs_plugin] {.lib.so }
-
+append_if $use_nic modules { vfs_} [socket_fs_plugin] {.lib.so }
 # exception for lxip - need 2 libs
 append_if $use_lxip modules { lxip.lib.so }
 
@@ -68,18 +85,21 @@ set build_components {
 	core init timer lib/ld
 }
 
-append build_components { lib/vfs_} [socket_fs_plugin] {}
+if {$use_nic} { append build_components { lib/vfs_} [socket_fs_plugin] {} }
 
 lappend build_components "$executable_place/$executable"
 
 append_if $need_pipe build_components { lib/vfs_pipe }
 
+append_if $use_lx_fs build_components { server/lx_fs  }
+append_if $use_lx_fs modules { lx_fs }
+
 create_boot_directory
 
 set depot_pkgs { }
 lappend depot_pkgs [depot_user]/src/[base_src]
-lappend depot_pkgs [depot_user]/pkg/[drivers_nic_pkg]
-lappend depot_pkgs [depot_user]/src/nic_router
+if {$use_nic} { lappend depot_pkgs [depot_user]/pkg/[drivers_nic_pkg] }
+if {$use_nic} { lappend depot_pkgs [depot_user]/src/nic_router }
 lappend depot_pkgs [depot_user]/src/init
 
 if [have_board linux] {
@@ -203,6 +223,22 @@ append_if $use_nic_router config {
 		</route>
 	</start>}
 
+#lx_fs plug if need
+append_if $use_lx_fs config {
+	<start name="lx_fs" caps="220" ld="no">
+		<resource name="RAM" quantum="8M"/>
+		<provides><service name="File_system"/></provides>
+		<config>
+			<policy label_prefix="} $executable {" root="/" writeable="yes"/>
+		</config>
+	</start>
+}
+
+# add dir sentence if defined
+if {![info exists use_vfs_dir_file]} {
+	set use_vfs_dir_file ""
+}
+
 # main golang executable
 append config {
 	<start name="} $executable {" caps="} $executable_caps {">
@@ -211,13 +247,16 @@ append config {
 			<arg value="} $executable {" />
 			} $arguments {
 			<vfs>
+				} $use_vfs_dir_file {
 				<dir name="dev">
 					<log/> <null/> <inline name="rtc">2020-01-01 00:00</inline>
 					<inline name="random">0123456789012345678901234567890123456789</inline>
 				</dir>
+}
+append_if $use_nic  config {
 				<dir name="socket">
 					<} [socket_fs_plugin] {}
-append config { dhcp="yes"/>
+append_if $use_nic config { dhcp="yes"/>
 				</dir>
 }
 
