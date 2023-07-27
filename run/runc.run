@@ -35,13 +35,14 @@ set use_net 0
 #     <arg value=\"cg1\" />
 #"
 
-set arguments "<arg value=\"spec\"/> <arg value=\"--rootless\"/>"
-#set arguments "<arg value=\"--debug\"/> \
+set arguments "<arg value=\"spec\"/>
+         <arg value=\"--rootless\"/>"
+# set arguments "<arg value=\"--debug\"/> \
 #    <arg value=\"--rootless\"/> \
 #    <arg value=\"true\"/> \
 #    <arg value=\"create\"/> \
 #    <arg value=\"my\"/> \
-#"
+# "
 #set arguments "<arg value=\"127.0.0.1\"/>"
 #dockerd  -D -l debug --rootless --experimental
 #dockerd  -D -l debug --rootless --experimental --containerd=/run/containerd/containerd.sock
@@ -63,5 +64,10 @@ source ${genode_dir}/repos/world/run/go_run.inc
 
 append qemu_args " -m $mem_size -nographic -smp $num_cpu"
 append_qemu_nic_args "hostfwd=tcp::5555-:$executable_port"
+
+proc lx_fs_root {} { return [run_dir]/genode }
+puts "generating contaier root [lx_fs_root]/docker/container/rootfs ..."
+exec rm -rf [lx_fs_root]/docker
+exec mkdir -p [lx_fs_root]/docker/container/rootfs
 
 run_genode_until forever

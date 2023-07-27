@@ -229,7 +229,7 @@ append_if $use_lx_fs config {
 		<resource name="RAM" quantum="8M"/>
 		<provides><service name="File_system"/></provides>
 		<config>
-			<policy label_prefix="} $executable {" root="/" writeable="yes"/>
+			<policy label_prefix="} $executable {" root="/docker/container" writeable="yes"/>
 		</config>
 	</start>
 }
@@ -261,13 +261,17 @@ append_if $use_nic config { dhcp="yes"/>
 }
 
 # add every library/binaries (mandatory for golang stack unwind)
+append config {
+				<!-- every binary/.so should present here for golang stack uniwind -->
+}
 foreach lib $modules {
-	append config "<rom name=\"$lib\" label=\"$lib\"/>"
+	append config "				<rom name=\"$lib\" label=\"$lib\"/>
+"
 }
 
 append config {
 				<rom name="binary" label="} $executable {"/>
-				<dir name="proc">
+				<dir name="proc" label="} $executable {">
 					<dir name="self">
 						<rom name="exe" label="} $executable {"/>
 					</dir>
@@ -301,6 +305,7 @@ append config {
 
 append config {
 			<route>
+				<service name="File_system"  label="container"> <child name="lx_fs"/> <parent label="container"/> </service>
 				<service name="Nic"> <child name="nic_router"/> </service>
 				<any-service> <parent/> <any-child/> </any-service>
 			</route>
@@ -324,5 +329,3 @@ build_boot_image $boot_modules
 
 append qemu_args " -m $mem_size -nographic -smp $num_cpu"
 append_qemu_nic_args "hostfwd=tcp::5555-:$executable_port"
-
-run_genode_until forever
